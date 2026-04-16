@@ -1,0 +1,30 @@
+collection:
+  funding_rate:
+    frequency: "8h"
+    cron: "10 0,8,16 * * *"
+    history_days: 30
+    retry_attempts: 3
+    retry_delay_seconds: 10
+    timeout_seconds: 30
+
+  # Fase 2
+  # order_book:
+  #   frequency: "1h"
+  #   cron: "5 * * * *"
+  #   depth: 10
+  # klines:
+  #   frequency: "1h"
+  #   cron: "3 * * * *"
+  #   interval: "1h"
+  #   limit: 24
+
+storage:
+  format: "parquet"
+  partition_by: ["exchange", "date"]
+  compression: "snappy"
+
+logging:
+  level: "INFO"
+  file: "logs/collection.log"
+  max_size_mb: 50
+  backup_count: 5

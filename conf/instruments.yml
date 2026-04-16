@@ -1,0 +1,22 @@
+instruments:
+  - id: BTCUSDT
+    base: BTC
+    quote: USDT
+    exchange_symbols:
+      binance: "BTCUSDT"
+      okx: "BTC-USDT-SWAP"
+      bybit: "BTCUSDT"
+      gateio: "BTC_USDT"
+      bitget: "BTCUSDT"
+      kucoin: "XBTUSDTM"
+
+  # - id: ETHUSDT
+  #   base: ETH
+  #   quote: USDT
+  #   exchange_symbols:
+  #     binance: "ETHUSDT"
+  #     okx: "ETH-USDT-SWAP"
+  #     bybit: "ETHUSDT"
+  #     gateio: "ETH_USDT"
+  #     bitget: "ETHUSDT"
+  #     kucoin: "ETHUSDTM"

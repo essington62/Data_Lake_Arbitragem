@@ -1,0 +1,163 @@
+exchanges:
+  binance:
+    enabled: true
+    name: "binance"
+    base_url: "https://fapi.binance.com"
+    endpoints:
+      funding_rate:
+        path: "/fapi/v1/fundingRate"
+        method: GET
+        params:
+          symbol: "{symbol}"
+          limit: 100
+        response_mapping:
+          timestamp: "fundingTime"
+          funding_rate: "fundingRate"
+          symbol: "symbol"
+      funding_rate_current:
+        path: "/fapi/v1/premiumIndex"
+        method: GET
+        params:
+          symbol: "{symbol}"
+        response_mapping:
+          next_funding_time: "nextFundingTime"
+          current_rate: "lastFundingRate"
+          mark_price: "markPrice"
+          index_price: "indexPrice"
+    rate_limit:
+      max_requests_per_minute: 1200
+      weight_per_request: 1
+      backoff_seconds: 5
+    symbol_format: "{base}{quote}"
+
+  okx:
+    enabled: true
+    name: "okx"
+    base_url: "https://www.okx.com"
+    endpoints:
+      funding_rate_history:
+        path: "/api/v5/public/funding-rate-history"
+        method: GET
+        params:
+          instId: "{symbol}"
+          limit: 100
+        response_mapping:
+          timestamp: "fundingTime"
+          funding_rate: "fundingRate"
+          symbol: "instId"
+      funding_rate_current:
+        path: "/api/v5/public/funding-rate"
+        method: GET
+        params:
+          instId: "{symbol}"
+        response_mapping:
+          current_rate: "fundingRate"
+          next_funding_time: "nextFundingTime"
+          mark_price: "markPrice"
+          index_price: "indexPrice"
+          symbol: "instId"
+    rate_limit:
+      max_requests_per_minute: 600
+      weight_per_request: 1
+      backoff_seconds: 5
+    symbol_format: "{base}-{quote}-SWAP"
+
+  bybit:
+    enabled: true
+    name: "bybit"
+    base_url: "https://api.bybit.com"
+    endpoints:
+      funding_rate:
+        path: "/v5/market/funding/history"
+        method: GET
+        params:
+          category: "linear"
+          symbol: "{symbol}"
+          limit: 200
+        response_mapping:
+          timestamp: "fundingRateTimestamp"
+          funding_rate: "fundingRate"
+          symbol: "symbol"
+    rate_limit:
+      max_requests_per_minute: 120
+      weight_per_request: 1
+      backoff_seconds: 5
+    symbol_format: "{base}{quote}"
+
+  gateio:
+    enabled: true
+    name: "gateio"
+    base_url: "https://fx-api.gateio.ws"
+    endpoints:
+      funding_rate:
+        path: "/api/v4/futures/usdt/funding_rate"
+        method: GET
+        params:
+          contract: "{symbol}"
+          limit: 100
+        response_mapping:
+          timestamp: "t"
+          funding_rate: "r"
+    rate_limit:
+      max_requests_per_minute: 300
+      weight_per_request: 1
+      backoff_seconds: 5
+    symbol_format: "{base}_{quote}"
+
+  bitget:
+    enabled: true
+    name: "bitget"
+    base_url: "https://api.bitget.com"
+    endpoints:
+      funding_rate:
+        path: "/api/v2/mix/market/history-fund-rate"
+        method: GET
+        params:
+          symbol: "{symbol}"
+          productType: "usdt-futures"
+          pageSize: 100
+        response_mapping:
+          timestamp: "fundingTime"
+          funding_rate: "fundingRate"
+          symbol: "symbol"
+      funding_rate_current:
+        path: "/api/v2/mix/market/current-fund-rate"
+        method: GET
+        params:
+          symbol: "{symbol}"
+          productType: "usdt-futures"
+        response_mapping:
+          current_rate: "fundingRate"
+    rate_limit:
+      max_requests_per_minute: 600
+      weight_per_request: 1
+      backoff_seconds: 5
+    symbol_format: "{base}{quote}"
+
+  kucoin:
+    enabled: true
+    name: "kucoin"
+    base_url: "https://api-futures.kucoin.com"
+    endpoints:
+      funding_rate_current:
+        path: "/api/v1/funding-rate/{symbol}/current"
+        method: GET
+        params: {}
+        response_mapping:
+          current_rate: "value"
+          timestamp: "timePoint"
+      funding_rate_history:
+        path: "/api/v1/contract/funding-rates"
+        method: GET
+        params:
+          symbol: "{symbol}"
+          from: "{start_time}"
+          to: "{end_time}"
+        response_mapping:
+          timestamp: "timePoint"
+          funding_rate: "fundingRate"
+    rate_limit:
+      max_requests_per_minute: 180
+      weight_per_request: 1
+      backoff_seconds: 5
+    symbol_format: "{base}{quote}M"
