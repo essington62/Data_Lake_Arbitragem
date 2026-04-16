@@ -6,6 +6,11 @@ def _ms_to_dt(ms: int) -> datetime:
     return datetime.fromtimestamp(int(ms) / 1000, tz=timezone.utc)
 
 
+def _parse_levels(raw: list) -> list[list[float]]:
+    """Convert [[price_str, qty_str], ...] → [[float, float], ...]."""
+    return [[float(p), float(q)] for p, q in raw]
+
+
 class BinanceCollector(BaseCollector):
     """
     funding_rate: GET /fapi/v1/fundingRate
@@ -46,4 +51,21 @@ class BinanceCollector(BaseCollector):
             "next_funding_time": _ms_to_dt(item[mapping["next_funding_time"]]),
             "mark_price": float(item.get(mapping.get("mark_price", ""), 0) or 0),
             "index_price": float(item.get(mapping.get("index_price", ""), 0) or 0),
+        }
+
+    def collect_order_book(self) -> dict:
+        # Response: {"lastUpdateId": ..., "T": <ms>, "bids": [["price","qty"],...], "asks": [...]}
+        data = self.fetch("order_book", section="order_book")
+        ts_raw = data.get("T") or data.get("time")
+        ts = _ms_to_dt(ts_raw) if ts_raw else datetime.now(timezone.utc)
+        bids = _parse_levels(data["bids"])
+        asks = _parse_levels(data["asks"])
+        metrics = self._compute_book_metrics(bids, asks)
+        return {
+            "timestamp": ts,
+            "exchange": "binance",
+            "symbol": self.instrument["id"],
+            "bids": bids,
+            "asks": asks,
+            **metrics,
         }

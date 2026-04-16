@@ -59,3 +59,23 @@ class BitgetCollector(BaseCollector):
             "mark_price": float(item.get("markPrice") or 0) or None,
             "index_price": None,
         }
+
+    def collect_order_book(self) -> dict:
+        # Response: {code:"00000", data:{bids:[["price","qty"],...], asks:[...], ts:"ms"}}
+        response = self.fetch("order_book", section="order_book")
+        if str(response.get("code")) != "00000":
+            raise RuntimeError(f"Bitget order book error: {response.get('msg', response)}")
+        data = response["data"]
+        ts_raw = data.get("ts")
+        ts = _ms_to_dt(ts_raw) if ts_raw else datetime.now(timezone.utc)
+        bids = [[float(lvl[0]), float(lvl[1])] for lvl in data["bids"]]
+        asks = [[float(lvl[0]), float(lvl[1])] for lvl in data["asks"]]
+        metrics = self._compute_book_metrics(bids, asks)
+        return {
+            "timestamp": ts,
+            "exchange": "bitget",
+            "symbol": self.instrument["id"],
+            "bids": bids,
+            "asks": asks,
+            **metrics,
+        }

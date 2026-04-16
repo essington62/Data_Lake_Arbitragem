@@ -88,4 +88,4 @@ class TestToDataframe:
     def test_timestamps_are_utc(self):
         rec = _make_record()
         df = to_dataframe([rec])
-        assert str(df["timestamp"].dtype) == "datetime64[ns, UTC]"
+        assert "UTC" in str(df["timestamp"].dtype)

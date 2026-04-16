@@ -68,3 +68,21 @@ class KuCoinCollector(BaseCollector):
             "mark_price": None,
             "index_price": None,
         }
+
+    def collect_order_book(self) -> dict:
+        # Response: {code:"200000", data:{sequence:.., bids:[["price","qty"],...], asks:[...], ts:<ms>}}
+        response = self.fetch("order_book", section="order_book")
+        data = self._unwrap(response)
+        ts_raw = data.get("ts")
+        ts = _ms_to_dt(ts_raw) if ts_raw else datetime.now(timezone.utc)
+        bids = [[float(lvl[0]), float(lvl[1])] for lvl in data["bids"]]
+        asks = [[float(lvl[0]), float(lvl[1])] for lvl in data["asks"]]
+        metrics = self._compute_book_metrics(bids, asks)
+        return {
+            "timestamp": ts,
+            "exchange": "kucoin",
+            "symbol": self.instrument["id"],
+            "bids": bids,
+            "asks": asks,
+            **metrics,
+        }

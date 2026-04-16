@@ -26,7 +26,7 @@ class BaseCollector(ABC):
         symbols = self.instrument.get("exchange_symbols", {})
         return symbols[exchange_key]
 
-    def fetch(self, endpoint_key: str, extra_params: dict = None) -> dict:
+    def fetch(self, endpoint_key: str, extra_params: dict = None, section: str = "funding_rate") -> dict:
         endpoint = self.config["endpoints"][endpoint_key]
         symbol = self.get_symbol()
 
@@ -47,9 +47,10 @@ class BaseCollector(ABC):
         if extra_params:
             params.update(extra_params)
 
-        retry_attempts = self.collection_config.get("retry_attempts", 3)
-        retry_delay = self.collection_config.get("retry_delay_seconds", 10)
-        timeout = self.collection_config.get("timeout_seconds", 30)
+        cfg = get_collection_config()["collection"].get(section, self.collection_config)
+        retry_attempts = cfg.get("retry_attempts", 3)
+        retry_delay = cfg.get("retry_delay_seconds", 10)
+        timeout = cfg.get("timeout_seconds", 30)
 
         for attempt in range(retry_attempts):
             try:
@@ -64,6 +65,23 @@ class BaseCollector(ABC):
         raise RuntimeError(
             f"Failed to fetch {endpoint_key} from {self.name} after {retry_attempts} attempts"
         )
+
+    def _compute_book_metrics(self, bids: list[list[float]], asks: list[list[float]]) -> dict:
+        """Compute derived fields from normalized bids/asks ([[price, qty], ...] as float)."""
+        best_bid = bids[0][0]
+        best_ask = asks[0][0]
+        mid_price = (best_bid + best_ask) / 2
+        spread_pct = (best_ask - best_bid) / mid_price * 100
+        bid_depth_usd = sum(p * q for p, q in bids)
+        ask_depth_usd = sum(p * q for p, q in asks)
+        return {
+            "best_bid": best_bid,
+            "best_ask": best_ask,
+            "mid_price": mid_price,
+            "spread_pct": spread_pct,
+            "bid_depth_usd": bid_depth_usd,
+            "ask_depth_usd": ask_depth_usd,
+        }
 
     @abstractmethod
     def collect_funding_rates(self) -> list[dict]:
@@ -82,3 +100,21 @@ class BaseCollector(ABC):
     @abstractmethod
     def collect_current_funding(self) -> dict:
         """Returns dict with current funding rate and next settlement."""
+
+    @abstractmethod
+    def collect_order_book(self) -> dict:
+        """Returns dict with normalized order book snapshot:
+        {
+            "timestamp": datetime (UTC),
+            "exchange": str,
+            "symbol": str,
+            "bids": list[list[float]],   # [[price, qty], ...] top N, float
+            "asks": list[list[float]],   # [[price, qty], ...] top N, float
+            "best_bid": float,
+            "best_ask": float,
+            "spread_pct": float,         # (best_ask - best_bid) / mid_price * 100
+            "mid_price": float,
+            "bid_depth_usd": float,
+            "ask_depth_usd": float,
+        }
+        """

@@ -2,6 +2,17 @@ from datetime import datetime, timezone
 from .base import BaseCollector
 
 
+def _parse_gateio_levels(raw: list) -> list[list[float]]:
+    """Gate.io futures depth: levels can be {"p": price_str, "s": size_int} dicts."""
+    result = []
+    for lvl in raw:
+        if isinstance(lvl, dict):
+            result.append([float(lvl["p"]), float(lvl["s"])])
+        else:
+            result.append([float(lvl[0]), float(lvl[1])])
+    return result
+
+
 class GateIOCollector(BaseCollector):
     """
     funding_rate: GET /api/v4/futures/usdt/funding_rate
@@ -42,4 +53,31 @@ class GateIOCollector(BaseCollector):
             "next_funding_time": None,
             "mark_price": None,
             "index_price": None,
+        }
+
+    def collect_order_book(self) -> dict:
+        # Response: {id:.., current:<unix_ns>, update:.., asks:[{p,s},...], bids:[{p,s},...]}
+        data = self.fetch("order_book", section="order_book")
+        # timestamp: "current" is unix nanoseconds or seconds; detect by magnitude
+        ts_raw = data.get("current") or data.get("update")
+        if ts_raw:
+            # Gate.io "current" can be nanoseconds (> 1e18) or milliseconds (> 1e12)
+            if ts_raw > 1e18:
+                ts = datetime.fromtimestamp(ts_raw / 1e9, tz=timezone.utc)
+            elif ts_raw > 1e12:
+                ts = datetime.fromtimestamp(ts_raw / 1e3, tz=timezone.utc)
+            else:
+                ts = datetime.fromtimestamp(ts_raw, tz=timezone.utc)
+        else:
+            ts = datetime.now(timezone.utc)
+        bids = _parse_gateio_levels(data["bids"])
+        asks = _parse_gateio_levels(data["asks"])
+        metrics = self._compute_book_metrics(bids, asks)
+        return {
+            "timestamp": ts,
+            "exchange": "gateio",
+            "symbol": self.instrument["id"],
+            "bids": bids,
+            "asks": asks,
+            **metrics,
         }

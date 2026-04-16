@@ -7,11 +7,15 @@ collection:
     retry_delay_seconds: 10
     timeout_seconds: 30
 
-  # Fase 2
-  # order_book:
-  #   frequency: "1h"
-  #   cron: "5 * * * *"
-  #   depth: 10
+  order_book:
+    frequency: "1h"
+    cron: "2 * * * *"
+    depth: 10
+    retry_attempts: 3
+    retry_delay_seconds: 10
+    timeout_seconds: 15
+
+  # Fase 3
   # klines:
   #   frequency: "1h"
   #   cron: "3 * * * *"

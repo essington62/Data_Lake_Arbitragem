@@ -56,3 +56,23 @@ class OKXCollector(BaseCollector):
             "mark_price": float(item.get("markPrice") or 0),
             "index_price": float(item.get("indexPrice") or 0),
         }
+
+    def collect_order_book(self) -> dict:
+        # Response: {code:"0", data:[{bids:[["price","qty","0","numOrders"],...], asks:[...], ts:"ms"}]}
+        response = self.fetch("order_book", section="order_book")
+        if response.get("code") != "0":
+            raise RuntimeError(f"OKX order book error: {response.get('msg', response)}")
+        item = response["data"][0]
+        ts = _ms_to_dt(item["ts"])
+        # OKX levels: [price, qty, liquidated_orders, num_orders] — take first two
+        bids = [[float(lvl[0]), float(lvl[1])] for lvl in item["bids"]]
+        asks = [[float(lvl[0]), float(lvl[1])] for lvl in item["asks"]]
+        metrics = self._compute_book_metrics(bids, asks)
+        return {
+            "timestamp": ts,
+            "exchange": "okx",
+            "symbol": self.instrument["id"],
+            "bids": bids,
+            "asks": asks,
+            **metrics,
+        }

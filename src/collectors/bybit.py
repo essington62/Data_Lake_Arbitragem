@@ -47,3 +47,22 @@ class BybitCollector(BaseCollector):
         latest = max(records, key=lambda r: r["timestamp"])
         latest["timestamp"] = datetime.now(timezone.utc)
         return latest
+
+    def collect_order_book(self) -> dict:
+        # Response: {retCode:0, result:{s:"BTCUSDT", b:[["price","qty"],...], a:[...], ts:<ms>}}
+        response = self.fetch("order_book", section="order_book")
+        if response.get("retCode") != 0:
+            raise RuntimeError(f"Bybit order book error: {response.get('retMsg', response)}")
+        result = response["result"]
+        ts = _ms_to_dt(result["ts"])
+        bids = [[float(lvl[0]), float(lvl[1])] for lvl in result["b"]]
+        asks = [[float(lvl[0]), float(lvl[1])] for lvl in result["a"]]
+        metrics = self._compute_book_metrics(bids, asks)
+        return {
+            "timestamp": ts,
+            "exchange": "bybit",
+            "symbol": self.instrument["id"],
+            "bids": bids,
+            "asks": asks,
+            **metrics,
+        }

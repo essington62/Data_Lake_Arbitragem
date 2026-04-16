@@ -4,6 +4,16 @@ exchanges:
     name: "binance"
     base_url: "https://fapi.binance.com"
     endpoints:
+      order_book:
+        path: "/fapi/v1/depth"
+        method: GET
+        params:
+          symbol: "{symbol}"
+          limit: 10
+        response_mapping:
+          bids: "bids"
+          asks: "asks"
+          timestamp: "T"
       funding_rate:
         path: "/fapi/v1/fundingRate"
         method: GET
@@ -35,6 +45,16 @@ exchanges:
     name: "okx"
     base_url: "https://www.okx.com"
     endpoints:
+      order_book:
+        path: "/api/v5/market/books"
+        method: GET
+        params:
+          instId: "{symbol}"
+          sz: "10"
+        response_mapping:
+          bids: "data[0].bids"
+          asks: "data[0].asks"
+          timestamp: "data[0].ts"
       funding_rate_history:
         path: "/api/v5/public/funding-rate-history"
         method: GET
@@ -67,6 +87,17 @@ exchanges:
     name: "bybit"
     base_url: "https://api.bybit.com"
     endpoints:
+      order_book:
+        path: "/v5/market/orderbook"
+        method: GET
+        params:
+          category: "linear"
+          symbol: "{symbol}"
+          limit: 10
+        response_mapping:
+          bids: "result.b"
+          asks: "result.a"
+          timestamp: "result.ts"
       funding_rate:
         path: "/v5/market/funding/history"
         method: GET
@@ -89,6 +120,15 @@ exchanges:
     name: "gateio"
     base_url: "https://fx-api.gateio.ws"
     endpoints:
+      order_book:
+        path: "/api/v4/futures/usdt/order_book"
+        method: GET
+        params:
+          contract: "{symbol}"
+          limit: 10
+        response_mapping:
+          bids: "bids"
+          asks: "asks"
       funding_rate:
         path: "/api/v4/futures/usdt/funding_rate"
         method: GET
@@ -109,6 +149,17 @@ exchanges:
     name: "bitget"
     base_url: "https://api.bitget.com"
     endpoints:
+      order_book:
+        path: "/api/v2/mix/market/depth"
+        method: GET
+        params:
+          symbol: "{symbol}"
+          productType: "usdt-futures"
+          limit: "10"
+        response_mapping:
+          bids: "data.bids"
+          asks: "data.asks"
+          timestamp: "data.ts"
       funding_rate:
         path: "/api/v2/mix/market/history-fund-rate"
         method: GET
@@ -139,6 +190,15 @@ exchanges:
     name: "kucoin"
     base_url: "https://api-futures.kucoin.com"
     endpoints:
+      order_book:
+        path: "/api/v1/level2/depth20"
+        method: GET
+        params:
+          symbol: "{symbol}"
+        response_mapping:
+          bids: "data.bids"
+          asks: "data.asks"
+          timestamp: "data.ts"
       funding_rate_current:
         path: "/api/v1/funding-rate/{symbol}/current"
         method: GET
